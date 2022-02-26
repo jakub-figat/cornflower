@@ -41,18 +41,22 @@ class MessageQueue(ConsumerProducerMixin):
                 (arg, pydantic_model), *_ = parameters.items()
 
             def on_message_callback(message: Message) -> None:
-                if pydantic_model is not None:
-                    try:
-                        pydantic_instance = pydantic_model(**message.decode())
-                        _callable(pydantic_instance)
-                    except ValueError as pydantic_exception:
-                        logging.error(
-                            f"{routing_key}: Error while parsing {pydantic_model.__name__}: {pydantic_exception}"
-                        )
+                if pydantic_model is None:
+                    _callable()
 
-                _callable()
+                try:
+                    pydantic_instance = pydantic_model(**message.decode())
+                    _callable(pydantic_instance)
+                except ValueError as pydantic_exception:
+                    logging.error(
+                        f"[{routing_key}] Error while parsing {pydantic_model.__name__}: {pydantic_exception}"
+                    )
+
+            self._on_message_callback_by_routing_key[routing_key] = on_message_callback
 
             return _callable
+
+        return decorator
 
     def _register_queue(self, routing_key: str) -> None:
         self._queue_by_routing_key[routing_key] = Queue(name=f"{routing_key}_queue", routing_key=routing_key)
