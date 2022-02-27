@@ -4,8 +4,14 @@ from typing import Callable, TypeVar
 
 from kombu import Message, Queue
 from kombu.mixins import ConsumerProducerMixin
+from pydantic import BaseModel
 
+# Generic consumer class provided by Kombu
 C = TypeVar(name="C")
+
+
+# Generic callable consumed and returned by decorator
+V = TypeVar(name="V")
 
 
 class MessageQueue(ConsumerProducerMixin):
@@ -24,7 +30,7 @@ class MessageQueue(ConsumerProducerMixin):
             for routing_key in self._routing_keys
         ]
 
-    def listen(self, routing_key: str):
+    def listen(self, routing_key: str) -> V:
         """
         Decorator accepts callable with zero or one argument typed with pydantic.BaseModel.
         Creates on_message callback for kombu.Consumer.
@@ -34,11 +40,15 @@ class MessageQueue(ConsumerProducerMixin):
         :return:
         """
 
-        def decorator(_callable):
+        def decorator(_callable: V) -> V:
             parameters = inspect.signature(_callable).parameters
             pydantic_model = None
             if len(parameters):
-                (arg, pydantic_model), *_ = parameters.items()
+                (arg, _type), *_ = parameters.items()
+                pydantic_model = _type.annotation
+                assert issubclass(
+                    pydantic_model, BaseModel
+                ), f"{_callable.__name__}: Command argument to handler function must inherit from pydantic.BaseModel"
 
             def on_message_callback(message: Message) -> None:
                 if pydantic_model is None:
