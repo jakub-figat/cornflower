@@ -1,0 +1,36 @@
+version: "3.8"
+
+
+x-environment: &common_env
+  RABBITMQ_DEFAULT_USER: rabbitmquser
+  RABBITMQ_DEFAULT_PASS: somepassword
+  RABBITMQ_PORT: 5672
+
+services:
+  app:
+    build: .
+    environment:
+      <<: *common_env
+    container_name: application
+    restart: always
+    volumes:
+      - ./:/app
+
+    depends_on:
+      - rabbitmq
+
+
+  rabbitmq:
+    image: rabbitmq:3.9
+    environment:
+      <<: *common_env
+    container_name: rabbit
+    restart: always
+    volumes:
+      - rabbitmq_data:/bitnami
+    ports:
+      - 5672:5672
+
+
+volumes:
+  rabbitmq_data:
