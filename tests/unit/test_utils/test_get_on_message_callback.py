@@ -1,4 +1,6 @@
+import json
 import logging
+from json import JSONDecodeError
 from typing import Callable
 
 import pytest
@@ -84,7 +86,14 @@ def test_get_on_message_callback_logs_error_on_invalid_json(
     fake_message_with_invalid_json: FakeMessage,
     caplog: LogCaptureFixture,
 ) -> None:
-    expected_log = f"Error while parsing JSON for {PydanticModel.__name__}"
+    decode_error = None
+
+    try:
+        json.loads(fake_message_with_invalid_json._content)
+    except JSONDecodeError as exc:
+        decode_error = exc
+
+    expected_log = f"Error while parsing JSON for {PydanticModel.__name__}: {decode_error}"
     with caplog.at_level(logging.ERROR):
         on_message_callback_with_pydantic_model(fake_message_with_invalid_json)
 
@@ -97,7 +106,13 @@ def test_get_on_message_callback_logs_error_on_pydantic_validation_error(
     fake_message_with_invalid_data: FakeMessage,
     caplog: LogCaptureFixture,
 ) -> None:
-    expected_log = f"Error while parsing {PydanticModel.__name__}"
+    pydantic_exception = None
+    try:
+        PydanticModel(**fake_message_with_invalid_data.content)
+    except ValueError as exc:
+        pydantic_exception = exc
+
+    expected_log = f"Error while parsing {PydanticModel.__name__}: {pydantic_exception}"
     with caplog.at_level(logging.ERROR):
         on_message_callback_with_pydantic_model(fake_message_with_invalid_data)
 
