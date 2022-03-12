@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional, Type
+from typing import Callable, Optional, Type
 
 import pytest
 from pydantic import BaseModel
@@ -41,7 +41,7 @@ def test_get_pydantic_model_class_properly_parses_pydantic_type_from_zero_or_one
 
 
 def test_get_pydantic_model_class_raises_assertion_error_when_argument_lacks_typing() -> None:
-    def _callable(arg: Any) -> None:
+    def _callable(arg) -> None:  # type: ignore
         pass
 
     with pytest.raises(AssertionError):
