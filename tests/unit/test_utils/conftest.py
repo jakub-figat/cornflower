@@ -16,4 +16,5 @@ class FakeMessage:
 
     @property
     def content(self) -> dict[str, Any]:
-        return json.loads(self._content)
+        content: dict[str, Any] = json.loads(self._content)
+        return content

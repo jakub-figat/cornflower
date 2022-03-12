@@ -43,7 +43,7 @@ class PydanticModel(BaseModel):
     arg: str
 
     @validator("arg")
-    def validate_arg(cls, value) -> str:
+    def validate_arg(cls, value: str) -> str:
         if value == "invalid":
             raise ValueError("Invalid arg")
 

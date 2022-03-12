@@ -11,7 +11,7 @@ logger = logging.getLogger("cornflower")
 logger.setLevel(logging.WARNING)
 
 
-def get_pydantic_model_class(_callable: Callable) -> Optional[Type[BaseModel]]:
+def get_pydantic_model_class(_callable: Callable[..., None]) -> Optional[Type[BaseModel]]:
     parameters = inspect.signature(_callable).parameters
     pydantic_model_class = None
     if len(parameters):
@@ -25,7 +25,7 @@ def get_pydantic_model_class(_callable: Callable) -> Optional[Type[BaseModel]]:
 
 
 def get_on_message_callback(
-    _callable: Callable, routing_key: str, pydantic_model_class: Optional[Type[BaseModel]] = None
+    _callable: Callable[..., None], routing_key: str, pydantic_model_class: Optional[Type[BaseModel]] = None
 ) -> Callable[[Message], None]:
     def on_message_callback(message: Message) -> None:
         if pydantic_model_class is None:

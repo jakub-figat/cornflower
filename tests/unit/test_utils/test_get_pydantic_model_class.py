@@ -1,4 +1,4 @@
-from typing import Callable, Optional, Type
+from typing import Any, Callable, Optional, Type
 
 import pytest
 from pydantic import BaseModel
@@ -14,19 +14,19 @@ class PydanticModel2(BaseModel):
     pass
 
 
-def handler_1(arg: PydanticModel1):
+def handler_1(arg: PydanticModel1) -> None:
     pass
 
 
-def handler_2(some_arg: PydanticModel2):
+def handler_2(some_arg: PydanticModel2) -> None:
     pass
 
 
-def handler_3():
+def handler_3() -> None:
     pass
 
 
-def handler_4(arg_1: PydanticModel1, arg_2: PydanticModel2):
+def handler_4(arg_1: PydanticModel1, arg_2: PydanticModel2) -> None:
     pass
 
 
@@ -35,13 +35,13 @@ def handler_4(arg_1: PydanticModel1, arg_2: PydanticModel2):
     [(handler_1, PydanticModel1), (handler_2, PydanticModel2), (handler_3, None), (handler_4, PydanticModel1)],
 )
 def test_get_pydantic_model_class_properly_parses_pydantic_type_from_zero_or_one_argument(
-    _callable: Callable, pydantic_model_class: Optional[Type[BaseModel]]
+    _callable: Callable[..., None], pydantic_model_class: Optional[Type[BaseModel]]
 ) -> None:
     assert get_pydantic_model_class(_callable=_callable) is pydantic_model_class
 
 
 def test_get_pydantic_model_class_raises_assertion_error_when_argument_lacks_typing() -> None:
-    def _callable(arg):
+    def _callable(arg: Any) -> None:
         pass
 
     with pytest.raises(AssertionError):
