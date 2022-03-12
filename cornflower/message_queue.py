@@ -1,12 +1,13 @@
 import logging
-from typing import Any, Callable, Optional, Type, TypeVar
+from typing import Callable, Optional, Type, TypeVar
 
 from amqp import Channel
 from kombu import Connection, Consumer, Message, Queue
 from kombu.mixins import ConsumerProducerMixin
 from pydantic import BaseModel
 
-from .options import QueueOptions
+from .message import OutputMessage
+from .options import ConsumerOptions, QueueOptions
 from .utils import get_on_message_callback, get_pydantic_model_class
 
 V = TypeVar("V")
@@ -25,10 +26,15 @@ class ConsumerEntry(BaseModel):
 
 
 class MessageQueue(ConsumerProducerMixin):
-    def __init__(self, url: str, queue_options: Optional[QueueOptions] = None) -> None:
+    def __init__(
+        self,
+        url: str,
+        queue_options: Optional[QueueOptions] = None,
+        consumer_options: Optional[ConsumerOptions] = None,
+    ) -> None:
         self.connection = Connection(url)
         self._queue_options = queue_options
-        self._url = url
+        self._consumer_options = consumer_options
         self._consumer_registry: list[ConsumerEntry] = []
 
     def listen(self, routing_key: str) -> Callable[[Callable[..., None]], Callable[..., None]]:
@@ -53,12 +59,17 @@ class MessageQueue(ConsumerProducerMixin):
 
         return decorator
 
-    def dispatch(self, message: Any) -> None:
-        raise NotImplementedError
+    def dispatch(self, message: OutputMessage) -> None:
+        self.producer.publish(
+            body=message.body, routing_key=message.routing_key, retry=True, delivery_mode=message.delivery_mode.value
+        )
 
     def get_consumers(self, consumer_class: Type[Consumer], channel: Channel) -> list[Consumer]:
+        consumer_options = {} if self._consumer_options is None else self._consumer_options.dict()
         return [
-            consumer_class(queues=[entry.queue], on_message=entry.on_message_callback, channel=channel)
+            consumer_class(
+                queues=[entry.queue], on_message=entry.on_message_callback, channel=channel, **consumer_options
+            )
             for entry in self._consumer_registry
         ]
 
