@@ -46,3 +46,25 @@ def handle_user_login() -> None:
 if __name__ == "__main__":
     queue.run()
 ```
+
+
+## Optional configuration
+
+```python
+from cornflower import MessageQueue
+from cornflower.options import QueueOptions, TransportOptions, ConsumerOptions
+
+queue = MessageQueue(
+    queue_options=QueueOptions(
+        durable=True,
+        exclusive=False,
+        auto_delete=False,
+    ),
+    consumer_options=ConsumerOptions(
+        prefetch_count=10
+    ),
+    transport_options=TransportOptions(
+        confirm_publish=True,
+    )
+)
+```

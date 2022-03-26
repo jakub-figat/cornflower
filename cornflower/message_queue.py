@@ -36,13 +36,6 @@ class MessageQueue(ConsumerProducerMixin):
         consumer_options: Optional[ConsumerOptions] = None,
         transport_options: Optional[TransportOptions] = None,
     ) -> None:
-        """
-
-        :param url: AMQP connection url
-        :param queue_options: instance of cornflower.options.QueueOptions
-        :param consumer_options: instance of cornflower.options.ConsumerOptions
-        :param transport_options: instance of cornflower.options.TransportOptions
-        """
         transport_options_dict = {} if transport_options is None else transport_options.dict()
 
         self.connection = Connection(url, transport_options=transport_options_dict)
@@ -52,7 +45,7 @@ class MessageQueue(ConsumerProducerMixin):
 
     def listen(self, routing_key: str) -> Callable[[Callable[..., None]], Callable[..., None]]:
         """
-        Decorator accepts callable with zero or one argument typed with pydantic.BaseModel.
+        Decorator accepting callable with zero or one argument typed with pydantic.BaseModel.
         Creates on_message callback for kombu.Consumer.
         Callback automatically parses message JSON data and validates it against given pydantic schema
         and its validators.
