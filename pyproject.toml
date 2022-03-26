@@ -37,6 +37,7 @@ exclude = '''
 
 [tool.isort]
 line_length = 119
+lines_after_imports = 2
 profile = "black"
 skip_glob = ["env/*"]
 

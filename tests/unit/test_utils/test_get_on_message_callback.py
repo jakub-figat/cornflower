@@ -11,6 +11,7 @@ from pydantic import BaseModel, validator
 from cornflower.utils import get_on_message_callback
 from tests.unit.test_utils.conftest import FakeMessage
 
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 

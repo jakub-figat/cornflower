@@ -11,6 +11,7 @@ from .message import OutputMessage
 from .options import ConsumerOptions, QueueOptions, TransportOptions
 from .utils import get_on_message_callback, get_pydantic_model_class
 
+
 V = TypeVar("V")
 
 
@@ -35,6 +36,13 @@ class MessageQueue(ConsumerProducerMixin):
         consumer_options: Optional[ConsumerOptions] = None,
         transport_options: Optional[TransportOptions] = None,
     ) -> None:
+        """
+
+        :param url: AMQP connection url
+        :param queue_options: instance of cornflower.options.QueueOptions
+        :param consumer_options: instance of cornflower.options.ConsumerOptions
+        :param transport_options: instance of cornflower.options.TransportOptions
+        """
         transport_options_dict = {} if transport_options is None else transport_options.dict()
 
         self.connection = Connection(url, transport_options=transport_options_dict)
@@ -65,6 +73,12 @@ class MessageQueue(ConsumerProducerMixin):
         return decorator
 
     def dispatch(self, message: OutputMessage) -> None:
+        """
+        Accepts OutputMessage and uses Kombu ConsumerProducerMixin.publish method
+        for sending message to broker.
+        :param message:
+        :return:
+        """
         self.producer.publish(
             body=json.dumps(message.body).encode("utf-8"),
             routing_key=message.routing_key,
