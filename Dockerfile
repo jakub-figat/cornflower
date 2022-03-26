@@ -11,14 +11,20 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
+RUN apt-get update -yq && apt-get install netcat -yq
+
 COPY pyproject.toml poetry.lock poetry.toml ./
 
 RUN pip install poetry=="$POETRY_VERSION"
 
 RUN poetry install
 
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh
+
 COPY . .
 
 
-ENTRYPOINT ["python", "example.py"]
+ENTRYPOINT ["sh", "./entrypoint.sh"]
+CMD ["python", "example.py"]
 EXPOSE 8000

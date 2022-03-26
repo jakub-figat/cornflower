@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Callable, Optional, Type, TypeVar
 
@@ -7,7 +8,7 @@ from kombu.mixins import ConsumerProducerMixin
 from pydantic import BaseModel
 
 from .message import OutputMessage
-from .options import ConsumerOptions, QueueOptions
+from .options import ConsumerOptions, QueueOptions, TransportOptions
 from .utils import get_on_message_callback, get_pydantic_model_class
 
 V = TypeVar("V")
@@ -19,6 +20,7 @@ logger.setLevel(logging.WARNING)
 
 class ConsumerEntry(BaseModel):
     queue: Queue
+    routing_key: str
     on_message_callback: Callable[[Message], None]
 
     class Config:
@@ -31,8 +33,11 @@ class MessageQueue(ConsumerProducerMixin):
         url: str,
         queue_options: Optional[QueueOptions] = None,
         consumer_options: Optional[ConsumerOptions] = None,
+        transport_options: Optional[TransportOptions] = None,
     ) -> None:
-        self.connection = Connection(url)
+        transport_options_dict = {} if transport_options is None else transport_options.dict()
+
+        self.connection = Connection(url, transport_options=transport_options_dict)
         self._queue_options = queue_options
         self._consumer_options = consumer_options
         self._consumer_registry: list[ConsumerEntry] = []
@@ -61,15 +66,16 @@ class MessageQueue(ConsumerProducerMixin):
 
     def dispatch(self, message: OutputMessage) -> None:
         self.producer.publish(
-            body=message.body, routing_key=message.routing_key, retry=True, delivery_mode=message.delivery_mode.value
+            body=json.dumps(message.body).encode("utf-8"),
+            routing_key=message.routing_key,
+            retry=True,
+            delivery_mode=message.delivery_mode.value,
         )
 
     def get_consumers(self, consumer_class: Type[Consumer], channel: Channel) -> list[Consumer]:
         consumer_options = {} if self._consumer_options is None else self._consumer_options.dict()
         return [
-            consumer_class(
-                queues=[entry.queue], on_message=entry.on_message_callback, channel=channel, **consumer_options
-            )
+            consumer_class(queues=[entry.queue], on_message=entry.on_message_callback, **consumer_options)
             for entry in self._consumer_registry
         ]
 
@@ -80,6 +86,7 @@ class MessageQueue(ConsumerProducerMixin):
         self._consumer_registry.append(
             ConsumerEntry(
                 on_message_callback=callback,
+                routing_key=routing_key,
                 queue=queue,
             )
         )

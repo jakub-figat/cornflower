@@ -50,10 +50,30 @@ class PydanticModel(BaseModel):
         return value
 
 
+class PydanticModelWithNoFields(BaseModel):
+    pass
+
+
+@pytest.fixture
+def callable_with_no_args() -> Callable[[], None]:
+    def _callable() -> None:
+        logger.info("No args given")
+
+    return _callable
+
+
 @pytest.fixture
 def callable_with_pydantic_model() -> Callable[[PydanticModel], None]:
     def _callable(model: PydanticModel) -> None:
         logger.info(model.arg)
+
+    return _callable
+
+
+@pytest.fixture
+def callable_with_pydantic_model_with_no_fields() -> Callable[[PydanticModelWithNoFields], None]:
+    def _callable(model: PydanticModelWithNoFields) -> None:
+        logger.info("No pydantic fields")
 
     return _callable
 
@@ -69,7 +89,37 @@ def on_message_callback_with_pydantic_model(
     )
 
 
-def test_get_on_message_callback_with_callable_with_side_effect(
+@pytest.fixture
+def on_message_callback_with_pydantic_model_with_no_fields(
+    callable_with_pydantic_model_with_no_fields: Callable[[PydanticModelWithNoFields], None]
+) -> Callable[[Message], None]:
+    routing_key = "test"
+
+    return get_on_message_callback(
+        _callable=callable_with_pydantic_model_with_no_fields,
+        routing_key=routing_key,
+        pydantic_model_class=PydanticModelWithNoFields,
+    )
+
+
+@pytest.fixture
+def on_message_callback_with_no_args(callable_with_no_args: Callable[[], None]) -> Callable[[Message], None]:
+    routing_key = "test"
+
+    return get_on_message_callback(_callable=callable_with_no_args, routing_key=routing_key, pydantic_model_class=None)
+
+
+def test_get_on_message_callback_with_no_args(
+    on_message_callback_with_no_args: Callable[[Message], None], fake_message: FakeMessage, caplog: LogCaptureFixture
+) -> None:
+    with caplog.at_level(logging.INFO):
+        on_message_callback_with_no_args(fake_message)
+
+    assert fake_message.is_ack
+    assert "No args given" in caplog.text
+
+
+def test_get_on_message_callback_with_callable_with_pydantic_model_with_side_effect(
     on_message_callback_with_pydantic_model: Callable[[Message], None],
     fake_message: FakeMessage,
     caplog: LogCaptureFixture,
@@ -79,6 +129,18 @@ def test_get_on_message_callback_with_callable_with_side_effect(
 
     assert fake_message.is_ack
     assert fake_message.content["arg"] in caplog.text
+
+
+def test_get_on_message_callback_with_callable_with_pydantic_model_with_no_fields(
+    on_message_callback_with_pydantic_model_with_no_fields: Callable[[Message], None],
+    fake_message: FakeMessage,
+    caplog: LogCaptureFixture,
+) -> None:
+    with caplog.at_level(logging.INFO):
+        on_message_callback_with_pydantic_model_with_no_fields(fake_message)
+
+    assert fake_message.is_ack
+    assert "No pydantic fields" in caplog.text
 
 
 def test_get_on_message_callback_logs_error_on_invalid_json(

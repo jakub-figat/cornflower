@@ -30,6 +30,7 @@ def get_on_message_callback(
     def on_message_callback(message: Message) -> None:
         if pydantic_model_class is None:
             _callable()
+            message.ack()
             return
 
         try:

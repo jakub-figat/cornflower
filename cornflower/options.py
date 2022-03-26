@@ -17,3 +17,7 @@ class ConsumerOptions(BaseModel):
             raise ValueError("prefetch_cont must be greater or equal to 0")
 
         return prefetch_count
+
+
+class TransportOptions(BaseModel):
+    confirm_publish: bool
