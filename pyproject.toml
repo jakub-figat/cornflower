@@ -4,6 +4,10 @@ version = "0.1.0"
 description = "Library for writting simple AMQP handlers with type hints and pydantic support"
 authors = ["jakub-figat"]
 license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/jakub-figat/cornflower"
+repository = "https://github.com/jakub-figat/cornflower"
+include = ["LICENSE"]
 
 [tool.poetry.dependencies]
 python = "^3.9"

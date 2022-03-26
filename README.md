@@ -1,6 +1,8 @@
 ## Cornflower
 ### Library for writing RabbitMQ message handlers with [pydantic](https://github.com/samuelcolvin/pydantic) validation.
 
+## Installation
+`$ pip install cornflower`
 
 ## Example use:
 
